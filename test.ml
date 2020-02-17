@@ -62,7 +62,7 @@ let all_exprs = [
     "-(f 3)";
     "f (-3)";
     "f -3";
-    "fn () -> 1";
+    "fn _ -> 1";
     "(fn x -> x + 1) (300 * (12 + 3))";
     "let fact = fn n -> if n < 1 then 1 else n * fact (n - 1) in fact 5";
     "f 1 2";

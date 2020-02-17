@@ -20,12 +20,7 @@ let eval_binary = function
     | (BinNeq, VBool x, VBool y) -> VBool (x <> y)
     | _ -> failwith "type error (binary expression)"
 
-let rec eval env e =
-(*
-    print_endline @@ "Expression: " ^ exp_to_str e;
-    let evaluated =
-*)
-    match e with
+let rec eval env = function
     | Eof -> VUnit
     | EInt n -> VInt n
     | EBool b -> VBool b
@@ -70,9 +65,3 @@ let rec eval env e =
                 eval app_env body
             | v -> failwith ("application of non-function: " ^ value_to_str v)
         end
-(*
-    in
-    print_endline @@ "Evaluated: " ^ value_to_str evaluated;
-    evaluated
-*)
-
