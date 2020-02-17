@@ -60,7 +60,7 @@ let rec eval env = function
         let closure = eval env fn in
         let arg_value = eval env arg in
         begin match closure with
-            | Closure (carg, body, closure_env) ->
+            | Closure (Ident carg, body, closure_env) ->
                 let app_env = env_extend closure_env carg (ref arg_value) in
                 eval app_env body
             | v -> failwith ("application of non-function: " ^ value_to_str v)

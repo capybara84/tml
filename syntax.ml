@@ -26,10 +26,10 @@ type exp = Eof | EInt of int | EBool of bool | Ident of id
     | Binary of binop * exp * exp | Unary of unop * exp
     | If of exp * exp * exp
     | Let of id * exp * exp | Letrec of id * exp * exp
-    | Fn of id * exp | Apply of exp * exp
+    | Fn of exp * exp | Apply of exp * exp
 
 type value = VUnit | VInt of int | VBool of bool | VChar of char | VString of string
-    | Closure of id * exp * env_t
+    | Closure of exp * exp * env_t
 and env_t = (id * value ref) list
 
 let env_extend env id value = (id, value) :: env
@@ -70,7 +70,7 @@ let rec exp_to_str = function
     | If (c, t, e) -> "(if " ^ exp_to_str c ^ " then " ^ exp_to_str t ^ " else " ^ exp_to_str e ^ ")"
     | Let (id, e, b) -> "(let " ^ id ^ " = " ^ exp_to_str e ^ " in " ^ exp_to_str b ^ ")"
     | Letrec (id, e, b) -> "(let rec " ^ id ^ " = " ^ exp_to_str e ^ " in " ^ exp_to_str b ^ ")"
-    | Fn (a, b) -> "(fn " ^ a ^ " -> " ^ exp_to_str b ^ ")"
+    | Fn (a, b) -> "(fn " ^ exp_to_str a ^ " -> " ^ exp_to_str b ^ ")"
     | Apply (f, a) -> "(" ^ exp_to_str f ^ " " ^ exp_to_str a ^ ")"
 
 let value_to_str = function
@@ -79,5 +79,5 @@ let value_to_str = function
     | VBool b -> string_of_bool b
     | VChar c -> String.make 1 c
     | VString s -> s
-    | Closure (arg, body, _) -> "<fn " ^ arg ^ " -> " ^ exp_to_str body ^ ">" 
+    | Closure (arg, body, _) -> "<fn " ^ exp_to_str arg ^ " -> " ^ exp_to_str body ^ ">" 
 

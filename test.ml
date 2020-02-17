@@ -3,10 +3,11 @@ open Syntax
 
 let simple_test () =
     let env0 = [] in
-    let e1 = Apply (Fn ("y", Binary (BinAdd, Ident "y", EInt 1)), EInt 3) in
-    let e2 = Apply (Let ("x", EInt 2, Fn ("y", Binary (BinAdd, Ident "y", Ident "x"))), EInt 3) in
+    let e1 = Apply (Fn (Ident "y", Binary (BinAdd, Ident "y", EInt 1)), EInt 3) in
+    let e2 = Apply (Let ("x", EInt 2,
+                        Fn (Ident "y", Binary (BinAdd, Ident "y", Ident "x"))), EInt 3) in
     let e3 = Letrec ("fact",
-                (Fn ("x",
+                (Fn (Ident "x",
                     (If (Binary (BinLE, Ident "x", EInt 0), EInt 1,
                         Binary (BinMul, Ident "x",
                             Apply (Ident "fact", Binary (BinSub, Ident "x", EInt 1))))))),
@@ -40,7 +41,7 @@ let scanner_test () =
             print_endline ("[" ^ token_type_to_string x.token_type ^ ", "
                 ^ string_of_int x.line ^ "]")) tokens
 
-let all_exprs = [
+let parse_exprs = [
     "'a'";
     "\"abc\"";
     "12";
@@ -65,6 +66,7 @@ let all_exprs = [
     "fn _ -> 1";
     "(fn x -> x + 1) (300 * (12 + 3))";
     "let fact = fn n -> if n < 1 then 1 else n * fact (n - 1) in fact 5";
+    "let add = fn a b -> a + b in add 1 2";
     "f 1 2";
     "f 1 2 3";
     "(1)";
@@ -80,7 +82,7 @@ let parser_test () =
             print_endline ("parsed> " ^ exp_to_str e)
         with Error s -> print_endline s
     in
-    List.iter do_parse all_exprs
+    List.iter do_parse parse_exprs
 
 let test () =
     simple_test ();
