@@ -15,13 +15,14 @@ type value = VInt of int | VBool of bool
     | RecClosure of id * id * exp * value env_t
 
 
-let env_extend env id v = env (*TODO*)
-let lookup env id = VInt 0 (*TODO*)
+let env_extend env id value = (id, value) :: env
+let env_lookup env id = List.assoc id env
+
 
 let rec exp_to_str = function
     | Eint n -> "Eint " ^ string_of_int n
     | Ebool b -> "Ebool " ^ string_of_bool b
-    | Symbol id -> "Symbol " ^ id
+    | Symbol id -> "Symbol \"" ^ id ^ "\""
     | Add (x, y) -> "Add (" ^ exp_to_str x ^ ", " ^ exp_to_str y ^ ")"
     | Sub (x, y) -> "Sub (" ^ exp_to_str x ^ ", " ^ exp_to_str y ^ ")"
     | Mul (x, y) -> "Mul (" ^ exp_to_str x ^ ", " ^ exp_to_str y ^ ")"
@@ -34,9 +35,9 @@ let rec exp_to_str = function
     | Not e -> "Not " ^ exp_to_str e
     | Minus e -> "Minus " ^ exp_to_str e
     | If (c, t, e) -> "If (" ^ exp_to_str c ^ ", " ^ exp_to_str t ^ ", " ^ exp_to_str e ^ ")"
-    | Let (id, e, b) -> "Let (" ^ id ^ ", " ^ exp_to_str e ^ ", " ^ exp_to_str b ^ ")"
-    | Letrec (id, e, b) -> "Letrec (" ^ id ^ ", " ^ exp_to_str e ^ ", " ^ exp_to_str b ^ ")"
-    | Fn (p, b) -> "Fn (" ^ p ^ ", " ^ exp_to_str b ^ ")"
+    | Let (id, e, b) -> "Let (\"" ^ id ^ "\", " ^ exp_to_str e ^ ", " ^ exp_to_str b ^ ")"
+    | Letrec (id, e, b) -> "Letrec (\"" ^ id ^ "\", " ^ exp_to_str e ^ ", " ^ exp_to_str b ^ ")"
+    | Fn (a, b) -> "Fn (\"" ^ a ^ "\", " ^ exp_to_str b ^ ")"
     | Apply (f, a) -> "Apply (" ^ exp_to_str f ^ ", " ^ exp_to_str a ^ ")"
 
 let rec value_to_str = function
@@ -64,7 +65,7 @@ let int_div = function
 let equal = function
     | VInt a, VInt b -> VBool (a = b)
     | VBool a, VBool b -> VBool (a = b)
-    | _ -> failwith "int expected"
+    | _ -> failwith "int/bool expected"
 
 let less = function
     | VInt a, VInt b -> VBool (a < b)
@@ -82,10 +83,13 @@ let int_minus = function
     | VInt n -> VInt (-n)
     | _ -> failwith "int expected"
 
-let rec eval (env : value env_t) = function
+let rec eval (env : value env_t) e =
+    print_endline @@ "Expression: " ^ exp_to_str e;
+    let evaluated =
+    match e with
     | Eint n -> VInt n
     | Ebool b -> VBool b
-    | Symbol x -> lookup env x
+    | Symbol x -> env_lookup env x
     | Add (x, y) -> int_add (eval env x, eval env y)
     | Sub (x, y) -> int_sub (eval env x, eval env y)
     | Mul (x, y) -> int_mul (eval env x, eval env y)
@@ -113,26 +117,51 @@ let rec eval (env : value env_t) = function
         end
     | Let (id, e, b) ->
         eval (env_extend env id (eval env e)) b
-    | Letrec (id, v, body) ->
-        begin match v with
-            | Fn (param, fbody) ->
-                let renv = env_extend env id (RecClosure (id, param, fbody, env))
+    | Letrec (id, fn, body) ->
+        begin match fn with
+            | Fn (arg, fbody) ->
+                let renv = env_extend env id (RecClosure (id, arg, fbody, env))
                 in eval renv body
-            | _ -> failwith "non-function"
+            | _ -> failwith "non functional def"
         end
     | Fn (p, b) ->
         Closure (p, b, env)
-    | Apply (f, param) ->
-        begin match eval env f with
-            | Closure (arg, body, closure_env) ->
-                let vparam = eval env param in
-                let app_env = env_extend closure_env arg vparam in
+    | Apply (fn, arg) ->
+        let closure = eval env fn in
+        begin match closure with
+            | Closure (carg, body, closure_env) ->
+                let varg = eval env arg in
+                let app_env = env_extend closure_env carg varg in
                 eval app_env body
-            | RecClosure (name, arg, body, closure_env) ->
-                let vparam = eval env param in
-                let app_env = env_extend closure_env arg vparam in
+            | RecClosure (name, carg, body, closure_env) ->
+                let varg = eval env arg in
+                let renv = env_extend closure_env name closure in
+                let app_env = env_extend renv carg varg in
                 eval app_env body
-            | _ -> failwith "non-closure"
+            | _ -> failwith "non functional value"
         end
+    in
+    print_endline @@ "Evaluated: " ^ value_to_str evaluated;
+    evaluated
 
+let env0 = [];;
 
+let e1 = Apply (Fn ("y", Add(Symbol "y", Eint 1)), Eint 3);;
+
+print_endline @@ exp_to_str e1;;
+print_endline @@ value_to_str @@ eval env0 e1;;
+
+let e2 = Apply (Let ("x", Eint 2, Fn ("y", Add (Symbol "y", Symbol "x"))), Eint 3);;
+
+print_endline @@ exp_to_str e2;;
+print_endline @@ value_to_str @@ eval env0 e2;;
+
+let e3 = Letrec ("fact",
+            (Fn ("x",
+                (If (Le (Symbol "x", Eint 0), Eint 1,
+                    Mul (Symbol "x",
+                        Apply (Symbol "fact", Sub (Symbol "x", Eint 1))))))),
+            Apply (Symbol "fact", Eint 5));;
+
+print_endline @@ exp_to_str e3;;
+print_endline @@ value_to_str @@ eval env0 e3;;
