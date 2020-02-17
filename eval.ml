@@ -45,6 +45,42 @@ let rec value_to_str = function
     | Closure (p, b, _) -> "<fn " ^ p ^ " -> " ^ exp_to_str b ^ ">" 
     | RecClosure (f, p, b, _) -> "<" ^ f ^ " " ^ p ^ " -> " ^ exp_to_str b ^ ">" 
 
+let int_add = function
+    | VInt a, VInt b -> VInt (a + b)
+    | _ -> failwith "int expected"
+
+let int_sub = function
+    | VInt a, VInt b -> VInt (a - b)
+    | _ -> failwith "int expected"
+
+let int_mul = function
+    | VInt a, VInt b -> VInt (a * b)
+    | _ -> failwith "int expected"
+
+let int_div = function
+    | VInt a, VInt b -> VInt (a / b)
+    | _ -> failwith "int expected"
+
+let equal = function
+    | VInt a, VInt b -> VBool (a = b)
+    | VBool a, VBool b -> VBool (a = b)
+    | _ -> failwith "int expected"
+
+let less = function
+    | VInt a, VInt b -> VBool (a < b)
+    | _ -> failwith "int expected"
+
+let lesseq = function
+    | VInt a, VInt b -> VBool (a <= b)
+    | _ -> failwith "int expected"
+
+let bool_not = function
+    | VBool b -> VBool (not b)
+    | _ -> failwith "bool expected"
+
+let int_minus = function
+    | VInt n -> VInt (-n)
+    | _ -> failwith "int expected"
 
 let rec eval (env : value env_t) = function
     | Eint n -> VInt n
