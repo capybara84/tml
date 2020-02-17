@@ -8,12 +8,10 @@ type exp = Eint of int | Ebool of bool | Symbol of id
     | Let of id * exp * exp | Letrec of id * exp * exp | Fn of id * exp
     | Apply of exp * exp
 
-type 't env_t = (id * 't) list
-
-type value = VInt of int | VBool of bool
-    | Closure of id * exp * value env_t
-    | RecClosure of id * id * exp * value env_t
-
+type value = VUnit | VInt of int | VBool of bool
+    | Closure of id * exp * env_t
+    | RecClosure of id * id * exp * env_t
+and env_t = (id * value ref) list
 
 let env_extend env id value = (id, value) :: env
 let env_lookup env id = List.assoc id env
@@ -41,6 +39,7 @@ let rec exp_to_str = function
     | Apply (f, a) -> "Apply (" ^ exp_to_str f ^ ", " ^ exp_to_str a ^ ")"
 
 let value_to_str = function
+    | VUnit -> "()"
     | VInt n -> string_of_int n
     | VBool b -> string_of_bool b
     | Closure (p, b, _) -> "<fn " ^ p ^ " -> " ^ exp_to_str b ^ ">" 
@@ -83,7 +82,7 @@ let int_minus = function
     | VInt n -> VInt (-n)
     | _ -> failwith "int expected"
 
-let rec eval (env : value env_t) e =
+let rec eval env e =
 (*
     print_endline @@ "Expression: " ^ exp_to_str e;
     let evaluated =
@@ -91,7 +90,7 @@ let rec eval (env : value env_t) e =
     match e with
     | Eint n -> VInt n
     | Ebool b -> VBool b
-    | Symbol x -> env_lookup env x
+    | Symbol x -> !(env_lookup env x)
     | Add (x, y) -> int_add (eval env x, eval env y)
     | Sub (x, y) -> int_sub (eval env x, eval env y)
     | Mul (x, y) -> int_mul (eval env x, eval env y)
@@ -117,30 +116,25 @@ let rec eval (env : value env_t) e =
             | VBool false -> eval env e
             | _ -> failwith "non-boolean"
         end
-    | Let (id, e, b) ->
-        eval (env_extend env id (eval env e)) b
+    | Let (id, e, body) ->
+        let v = eval env e in
+        let env = env_extend env id (ref v) in
+        eval env body
     | Letrec (id, fn, body) ->
-        begin match fn with
-            | Fn (arg, fbody) ->
-                let renv = env_extend env id (RecClosure (id, arg, fbody, env))
-                in eval renv body
-            | _ -> failwith "non functional def"
-        end
-    | Fn (p, b) ->
-        Closure (p, b, env)
+        let r = ref VUnit in
+        let renv = env_extend env id r in
+        r := eval renv fn;
+        eval renv body
+    | Fn (arg, body) ->
+        Closure (arg, body, env)
     | Apply (fn, arg) ->
         let closure = eval env fn in
+        let arg_value = eval env arg in
         begin match closure with
             | Closure (carg, body, closure_env) ->
-                let varg = eval env arg in
-                let app_env = env_extend closure_env carg varg in
+                let app_env = env_extend closure_env carg (ref arg_value) in
                 eval app_env body
-            | RecClosure (name, carg, body, closure_env) ->
-                let varg = eval env arg in
-                let renv = env_extend closure_env name closure in
-                let app_env = env_extend renv carg varg in
-                eval app_env body
-            | _ -> failwith "non functional value"
+            | v -> failwith ("application of non-function: " ^ value_to_str v)
         end
 (*
     in
