@@ -5,7 +5,7 @@ type exp = Eint of int | Ebool of bool | Symbol of id
     | Add of exp * exp |  Sub of exp * exp | Mul of exp * exp | Div of exp * exp
     | Eq of exp * exp | Lt of exp * exp | Le of exp * exp | And of exp * exp
     | Or of exp * exp | Not of exp | Minus of exp | If of exp * exp * exp
-    | Let of id * exp * exp | Letrec of id * exp * exp | Fn of exp * exp
+    | Let of id * exp * exp | Letrec of id * exp * exp | Fn of id * exp
     | Apply of exp * exp
 
 type 't env_t = (id * 't) list
@@ -36,7 +36,7 @@ let rec exp_to_str = function
     | If (c, t, e) -> "If (" ^ exp_to_str c ^ ", " ^ exp_to_str t ^ ", " ^ exp_to_str e ^ ")"
     | Let (id, e, b) -> "Let (" ^ id ^ ", " ^ exp_to_str e ^ ", " ^ exp_to_str b ^ ")"
     | Letrec (id, e, b) -> "Letrec (" ^ id ^ ", " ^ exp_to_str e ^ ", " ^ exp_to_str b ^ ")"
-    | Fn (p, b) -> "Fn (" ^ exp_to_str p ^ ", " ^ exp_to_str b ^ ")"
+    | Fn (p, b) -> "Fn (" ^ p ^ ", " ^ exp_to_str b ^ ")"
     | Apply (f, a) -> "Apply (" ^ exp_to_str f ^ ", " ^ exp_to_str a ^ ")"
 
 let rec value_to_str = function
@@ -132,6 +132,7 @@ let rec eval (env : value env_t) = function
                 let vparam = eval env param in
                 let app_env = env_extend closure_env arg vparam in
                 eval app_env body
+            | _ -> failwith "non-closure"
         end
 
 
