@@ -40,7 +40,7 @@ let rec exp_to_str = function
     | Fn (a, b) -> "Fn (\"" ^ a ^ "\", " ^ exp_to_str b ^ ")"
     | Apply (f, a) -> "Apply (" ^ exp_to_str f ^ ", " ^ exp_to_str a ^ ")"
 
-let rec value_to_str = function
+let value_to_str = function
     | VInt n -> string_of_int n
     | VBool b -> string_of_bool b
     | Closure (p, b, _) -> "<fn " ^ p ^ " -> " ^ exp_to_str b ^ ">" 
@@ -84,8 +84,10 @@ let int_minus = function
     | _ -> failwith "int expected"
 
 let rec eval (env : value env_t) e =
+(*
     print_endline @@ "Expression: " ^ exp_to_str e;
     let evaluated =
+*)
     match e with
     | Eint n -> VInt n
     | Ebool b -> VBool b
@@ -140,10 +142,13 @@ let rec eval (env : value env_t) e =
                 eval app_env body
             | _ -> failwith "non functional value"
         end
+(*
     in
     print_endline @@ "Evaluated: " ^ value_to_str evaluated;
     evaluated
+*)
 
+(*
 let env0 = [];;
 
 let e1 = Apply (Fn ("y", Add(Symbol "y", Eint 1)), Eint 3);;
@@ -165,3 +170,4 @@ let e3 = Letrec ("fact",
 
 print_endline @@ exp_to_str e3;;
 print_endline @@ value_to_str @@ eval env0 e3;;
+*)
