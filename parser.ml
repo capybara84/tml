@@ -87,7 +87,7 @@ let is_apply e t =
     | Fn _ | Apply _ | Ident _ ->
         begin
             match t with
-            | ID _ | BOOL_LIT _ | INT_LIT _
+            | EMPTY | ID _ | BOOL_LIT _ | INT_LIT _
             | CHAR_LIT _ | STRING_LIT _ | LPAR -> true
             | _ -> false
         end
@@ -128,6 +128,9 @@ let rec parse_simple pars =
     let res =
         match peek_token_type pars with
         | EOF -> Eof
+        | EMPTY ->
+            next_token pars;
+            Unit
         | ID id ->
             next_token pars;
             Ident id

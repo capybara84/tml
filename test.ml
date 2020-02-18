@@ -249,7 +249,8 @@ let eval_test verbose =
                 print_endline ("evaluated> " ^ value_to_str v);
                 print_endline ("expected > " ^ value_to_str expected)
             end else ();
-            equal v expected ("result:" ^ value_to_str v ^ " != " ^ value_to_str expected ^ "\n")
+            equal v expected ("text:" ^ text
+                ^ "\nresult:" ^ value_to_str v ^ " != " ^ value_to_str expected ^ "\n")
         with Error s -> fail s
     in
     List.iter do_eval_test eval_test_exprs;
@@ -261,6 +262,6 @@ let test () =
 *)
     scanner_test false;
     parser_test false;
-    eval_test true;
+    eval_test false;
     report ()
 
