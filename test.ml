@@ -33,21 +33,6 @@ let report () =
     print_endline ("OK    : " ^ (green @@ string_of_int !n_ok));
     print_endline ("Failed: " ^ (if !n_fail = 0 then "0" else (red @@ string_of_int !n_fail)))
 
-let test_list = ref []
-
-let add name verbose (fn : bool -> unit) =
-    test_list := (name, verbose, fn) :: !test_list
-
-let run () =
-    let do_test (name, verbose, fn) =
-        print_string (name ^ " ");
-        fn verbose;
-        print_newline ()
-    in
-    print_endline "Test";
-    List.iter do_test (List.rev !test_list);
-    report ()
-
 (*
 let simple_test () =
     let env0 = [] in
@@ -109,56 +94,104 @@ let scanner_test verbose =
             test_tokens tokens;
     print_newline ()
 
-let parse_exprs = [
-    "'a'";
-    "\"abc\"";
-    "12";
-    "300 + 12";
-    "300 * 12 + 3";
-    "300 * (12 + 3)";
-    "1 / 2 < 3 * 4";
-    "2 * -(1 + 2)";
-    "a && b";
-    "a || b";
-    "!(x < y)";
-    "1 <= 2";
-    "1 > 2";
-    "1 >= 2";
-    "1 == 2";
-    "1 != 2";
-    "fn x -> x + 1";
-    "f 3";
-    "-(f 3)";
-    "f (-3)";
-    "f -3";
-    "fn _ -> 1";
-    "(fn x -> x + 1) (300 * (12 + 3))";
-    "let fact = fn n -> if n < 1 then 1 else n * fact (n - 1) in fact 5";
-    "let add = fn a b -> a + b in add 1 2";
-    "f 1 2";
-    "f 1 2 3";
-    "(1)";
-    "true";
-    "false";
+let parse_test_exprs = [
+    ("'a'", EChar 'a');
+    ("\"abc\"", EString "abc");
+    ("12", EInt 12);
+    ("300 + 12",
+        Binary (BinAdd, EInt 300, EInt 12));
+    ("300 * 12 + 3",
+        Binary (BinAdd, Binary (BinMul, EInt 300, EInt 12), EInt 3));
+    ("300 * (12 + 3)",
+        Binary (BinMul, EInt 300,
+                Binary (BinAdd, EInt 12, EInt 3)));
+    ("1 / 2 < 3 * 4",
+        Binary (BinLT, (Binary (BinDiv, EInt 1, EInt 2)),
+                        (Binary (BinMul, EInt 3, EInt 4))));
+    ("2 * -(1 + 2)",
+        Binary (BinMul, EInt 2,
+            (Unary (UMinus, Binary (BinAdd, EInt 1, EInt 2)))));
+    ("a && b",
+        Binary (BinLand, Ident "a", Ident "b"));
+    ("a || b",
+        Binary (BinLor, Ident "a", Ident "b"));
+    ("!(x < y)",
+        Unary (UNot, Binary (BinLT, Ident "x", Ident "y")));
+    ("1 <= 2",
+        Binary (BinLE, EInt 1, EInt 2));
+    ("1 > 2",
+        Binary (BinGT, EInt 1, EInt 2));
+    ("1 >= 2",
+        Binary (BinGE, EInt 1, EInt 2));
+    ("1 == 2",
+        Binary (BinEql, EInt 1, EInt 2));
+    ("1 != 2",
+        Binary (BinNeq, EInt 1, EInt 2));
+    ("fn x -> x + 1",
+        Fn (Ident "x", Binary (BinAdd, Ident "x", EInt 1)));
+    ("f 3",
+        Apply (Ident "f", EInt 3));
+    ("-(f 3)",
+        Unary (UMinus, Apply (Ident "f", EInt 3)));
+    ("f (-3)",
+        Apply (Ident "f", Unary (UMinus, EInt 3)));
+    ("f -3",
+        Binary (BinSub, Ident "f", EInt 3));
+    ("fn () -> 1",
+        Fn (Unit, EInt 1));
+    ("(fn x -> x + 1) (300 * (12 + 3))",
+        Apply (Fn (Ident "x", Binary (BinAdd, Ident "x", EInt 1)), 
+            Binary (BinMul, EInt 300,
+                Binary (BinAdd, EInt 12, EInt 3))));
+    ("let fact = fn n -> if n < 1 then 1 else n * fact (n - 1) in fact 5",
+            Let ("fact",
+                Fn (Ident "n",
+                    (If (Binary (BinLT, Ident "n", EInt 1),
+                          EInt 1,
+                          Binary (BinMul, Ident "n",
+                                        Apply (Ident "fact",
+                                            Binary (BinSub, Ident "n",
+                                                EInt 1)))))),
+                Apply (Ident "fact", EInt 5)));
+    ("1+2+3",
+        (Binary (BinAdd,
+            (Binary (BinAdd, EInt 1, EInt 2)), EInt 3)));
+    ("f 1 2",
+        Apply (Apply (Ident "f", EInt 1), EInt 2));
+    ("f 1 2 3",
+        (Apply (Apply (Apply (Ident "f",
+            EInt 1), EInt 2), EInt 3)));
+    ("(1)", EInt 1);
+    ("true", EBool true);
+    ("false", EBool false);
+    ("(1)", EInt 1);
 ]
 
-let parser_test () =
-    let do_parse text =
+let parser_test verbose =
+    print_string "Parser Test:";
+    let do_parse (text, expected) =
         try
-            print_endline ("text > " ^ text);
-            let e = Parser.parse_one @@ Scanner.from_string text in
-            print_endline ("parsed> " ^ exp_to_str e)
-        with Error s -> print_endline s
+            if verbose then 
+                print_endline ("text    > " ^ text)
+            else ();
+            let expr = Parser.parse_one @@ Scanner.from_string text in
+            let parsed = exp_to_str expr in
+            let expected = exp_to_str expected in
+            if verbose then begin
+                print_endline ("parsed  > " ^ parsed);
+                print_endline ("expected> " ^ expected)
+            end else ();
+            equal parsed expected ("text:" ^ text ^ "\nresult:" ^ parsed ^ " != " ^ expected ^ "\n")
+        with Error s -> fail s
     in
-    List.iter do_parse parse_exprs
+    List.iter do_parse parse_test_exprs;
+    print_newline ()
 
 let test () =
 (*
     simple_test ();
 *)
     scanner_test false;
-(*
-    parser_test ();
-*)
+    parser_test false;
     report ()
 

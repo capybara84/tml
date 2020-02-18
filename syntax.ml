@@ -7,7 +7,7 @@ type token_type
     | CHAR_LIT of char | STRING_LIT of string
     | LET | REC | IN | FN | IF | THEN | ELSE
     | EQ | EQL | NEQ | LT | LE | GT | GE | MINUS | PLUS | SLASH | STAR
-    | NOT | OR | LOR | LAND | ARROW | LPAR | RPAR
+    | NOT | OR | LOR | LAND | ARROW | LPAR | RPAR | EMPTY
     | COMMA | SEMI
 
 type token = {
@@ -21,7 +21,7 @@ type binop = BinAdd | BinSub | BinMul | BinDiv | BinLT | BinLE | BinGT | BinGE
             | BinEql | BinNeq | BinLor | BinLand
 type unop = UNot | UMinus
 
-type exp = Eof | EInt of int | EBool of bool | Ident of id
+type exp = Eof | Unit | EInt of int | EBool of bool | Ident of id
     | EChar of char | EString of string
     | Binary of binop * exp * exp | Unary of unop * exp
     | If of exp * exp * exp
@@ -45,7 +45,7 @@ let token_type_to_string = function
     | LE -> "<=" | GT -> ">" | GE -> ">=" | MINUS -> "-" | PLUS -> "+"
     | SLASH -> "/" | STAR -> "*" | NOT -> "!" | OR -> "|"
     | LOR -> "||" | LAND -> "&&" | ARROW -> "->" | LPAR -> "(" | RPAR -> ")"
-    | COMMA -> "," | SEMI -> ";"
+    | EMPTY -> "()" | COMMA -> "," | SEMI -> ";"
 
 let token_to_string t = token_type_to_string t.token_type
 
@@ -60,6 +60,7 @@ let str_of_unop = function
 
 let rec exp_to_str = function
     | Eof -> "<EOF>"
+    | Unit -> "()"
     | EInt n -> "EInt " ^ string_of_int n
     | EBool b -> "EBool " ^ string_of_bool b
     | Ident id -> "Ident \"" ^ id ^ "\""

@@ -22,6 +22,7 @@ let eval_binary = function
 
 let rec eval env = function
     | Eof -> VUnit
+    | Unit -> VUnit
     | EInt n -> VInt n
     | EBool b -> VBool b
     | Ident x -> !(env_lookup env x)

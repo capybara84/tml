@@ -2,7 +2,7 @@ PROGRAM = tml
 
 all : byte
 
-test : test
+test : byte
 	ocamlrun $(PROGRAM).byte -t
 
 native:
@@ -11,5 +11,5 @@ native:
 byte:
 	ocamlbuild $(PROGRAM).byte
 
-clan:
+clean:
 	ocamlbuild -clean

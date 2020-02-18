@@ -162,8 +162,8 @@ and scan_token scan =
     | Some '+' -> next_char scan; PLUS
     | Some '*' -> next_char scan; STAR
     | Some ';' -> next_char scan; SEMI
-    | Some '(' -> next_char scan; LPAR
     | Some ')' -> next_char scan; RPAR
+    | Some '(' -> scan_token2 ')' EMPTY LPAR
     | Some '=' -> scan_token2 '=' EQL EQ
     | Some '!' -> scan_token2 '=' NEQ NOT
     | Some '>' -> scan_token2 '=' GE GT
