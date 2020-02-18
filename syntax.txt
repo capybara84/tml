@@ -1,5 +1,5 @@
 
-expr = LET [REC] ID '=' expr IN expr
+expr = LET [REC] ID '=' expr [IN expr]
     | FN params '->' expr
     | IF expr THEN expr ELSE expr
     | logical_expr
