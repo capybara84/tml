@@ -1,0 +1,15 @@
+
+expr = LET [REC] ID '=' expr IN expr
+    | FN params '->' expr
+    | IF expr THEN expr ELSE expr
+    | logical_expr
+params = '()' | ID {ID}
+logical_expr = equal_expr {logical_op equal_expr}
+equal_expr = cons_expr [equal_op cons_expr]
+cons_expr = add_expr
+add_expr = mul_expr {add_op mul_expr}
+mul_expr = apply_expr {mul_op apply_expr}
+apply_expr = unary_expr {simple_expr}
+unary_expr = [un_op] simple_expr
+simple_expr = '()' | ID | BOOL_LIT | INT_LIT | CHAR_LIT
+        | STRING_LIT | '(' expr ')'

@@ -238,7 +238,7 @@ let eval_test_exprs = [
 ]
 
 let eval_test verbose =
-    print_endline "Eval Test:";
+    print_string "Eval Test:";
     let do_eval_test (text, expected) =
         try
             if verbose then
