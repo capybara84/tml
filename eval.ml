@@ -1,9 +1,12 @@
 open Syntax
 
+let error msg =
+    raise (Error ("Runtime Error: " ^ msg))
+
 let eval_unary = function
     | (UMinus, VInt n) -> VInt (-n)
     | (UNot, VBool b) -> VBool (not b)
-    | _ -> failwith "type error (unary expression)"
+    | _ -> error "type error (unary expression)"
 
 let eval_binary = function
     | (BinAdd, VInt x, VInt y) -> VInt (x + y)
@@ -18,7 +21,7 @@ let eval_binary = function
     | (BinEql, VBool x, VBool y) -> VBool (x = y)
     | (BinNeq, VInt x, VInt y) -> VBool (x <> y)
     | (BinNeq, VBool x, VBool y) -> VBool (x <> y)
-    | _ -> failwith "type error (binary expression)"
+    | _ -> error "type error (binary expression)"
 
 let rec eval env = function
     | Eof -> VUnit
@@ -44,7 +47,7 @@ let rec eval env = function
         begin match eval env c with
             | VBool true -> eval env t
             | VBool false -> eval env e
-            | _ -> failwith "non-boolean"
+            | _ -> error "non-boolean"
         end
     | Let (id, e, body) ->
         let v = eval env e in
@@ -64,5 +67,5 @@ let rec eval env = function
             | Closure (Ident carg, body, closure_env) ->
                 let app_env = env_extend closure_env carg (ref arg_value) in
                 eval app_env body
-            | v -> failwith ("application of non-function: " ^ value_to_str v)
+            | v -> error ("application of non-function: " ^ value_to_str v)
         end

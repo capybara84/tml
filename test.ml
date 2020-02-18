@@ -187,11 +187,80 @@ let parser_test verbose =
     List.iter do_parse parse_test_exprs;
     print_newline ()
 
+let eval_test_exprs = [
+    ("'a'", VChar 'a');
+    ("\"abc\"", VString "abc");
+    ("12", VInt 12);
+    ("300 + 12", VInt 312);
+    ("300 * 12 + 3", VInt 3603);
+    ("300 * (12 + 3)", VInt 4500);
+    ("300 / (12 - 3)", VInt 33);
+    ("1 < 2", VBool true);
+    ("1 <= 1", VBool true);
+    ("1 > 2", VBool false);
+    ("2 >= 2", VBool true);
+    ("2 == 2", VBool true);
+    ("2 == 1", VBool false);
+    ("2 != 1", VBool true);
+    ("2 != 2", VBool false);
+    ("'a' == 'a'", VBool true);
+    ("'a' == 'b'", VBool false);
+    ("'a' != 'a'", VBool false);
+    ("'a' != 'b'", VBool true);
+    ("'a' < 'b'", VBool true);
+    ("'b' < 'a'", VBool false);
+    ("'a' <= 'a'", VBool true);
+    ("'b' <= 'a'", VBool false);
+    ("'a' > 'b'", VBool false);
+    ("'b' > 'a'", VBool true);
+    ("'a' >= 'b'", VBool false);
+    ("'a' >= 'a'", VBool true);
+    ("\"abc\" + \"def\"", VString "abcdef");
+    ("\"abc\" == \"abc\"", VBool true);
+    ("\"abc\" == \"def\"", VBool false);
+    ("\"abc\" != \"abc\"", VBool false);
+    ("\"abc\" != \"def\"", VBool true);
+    ("\"abc\" < \"def\"", VBool true);
+    ("\"abc\" > \"def\"", VBool false);
+    ("1 > 2 || 2 > 1", VBool true);
+    ("1 < 2 && 2 < 1", VBool false);
+    ("-5", VInt (-5));
+    ("!true", VBool false);
+    ("!false", VBool true);
+    ("let x = 1 in x", VInt 1);
+    ("let f = fn () -> 5 in f ()", VInt 5);
+    ("let g = fn _ -> 8 in g 3", VInt 8);
+    ("let a = fn x -> x + 1 in a 4", VInt 5);
+    ("let add = fn x -> fn y -> x + y in add 1 2", VInt 3);
+    ("let add = fn x y -> x + y in add 2 3", VInt 5);
+    ("let add = fn x y -> x + y in let add5 = add 5 in add5 3", VInt 8);
+    ("let rec fact = fn n -> if n < 1 then 1 else n * fact (n-1) in fact 5", VInt 120);
+]
+
+let eval_test verbose =
+    print_endline "Eval Test:";
+    let do_eval_test (text, expected) =
+        try
+            if verbose then
+                print_endline ("text> " ^ text)
+            else ();
+            let v = Eval.eval [] @@ Parser.parse_one @@ Scanner.from_string text in
+            if verbose then begin
+                print_endline ("evaluated> " ^ value_to_str v);
+                print_endline ("expected > " ^ value_to_str expected)
+            end else ();
+            equal v expected ("result:" ^ value_to_str v ^ " != " ^ value_to_str expected ^ "\n")
+        with Error s -> fail s
+    in
+    List.iter do_eval_test eval_test_exprs;
+    print_newline ()
+
 let test () =
 (*
     simple_test ();
 *)
     scanner_test false;
     parser_test false;
+    eval_test true;
     report ()
 
