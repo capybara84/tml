@@ -87,7 +87,7 @@ let is_apply e t =
     | Fn _ | Apply _ | Ident _ ->
         begin
             match t with
-            | ID _ | BOOL_LIT _ | INT_LIT _
+            | EMPTY | ID _ | BOOL_LIT _ | INT_LIT _
             | CHAR_LIT _ | STRING_LIT _ | LPAR -> true
             | _ -> false
         end
@@ -128,6 +128,9 @@ let rec parse_simple pars =
     let res =
         match peek_token_type pars with
         | EOF -> Eof
+        | EMPTY ->
+            next_token pars;
+            Unit
         | ID id ->
             next_token pars;
             Ident id
@@ -278,7 +281,6 @@ and parse_if pars =
     debug_parse_out "parse_if";
     If (e1, e2, e3)
 
-(*
 and parse_param_list pars args =
     debug_parse_in "parse_param_list";
     let e =
@@ -292,21 +294,23 @@ and parse_param_list pars args =
     debug_parse_out "parse_param_list";
     e
 
+and parse_params pars =
+    debug_parse_in "parse_params pars";
+    let e =
+        if peek_token_type pars = EMPTY then
+            (next_token pars; [Unit])
+        else
+            parse_param_list pars []
+    in
+    debug_parse_out "parse_params pars";
+    e
+
 and parse_fn pars =
     debug_parse_in "parse_fn";
     next_token pars;
-    let args = parse_param_list pars in
+    let args = parse_params pars in
     expect pars ARROW;
     let e = List.fold_right (fun arg body -> Fn (arg, body)) args (parse_expr pars) in
-    debug_parse_out "parse_fn";
-    e
-*)
-and parse_fn pars =
-    debug_parse_in "parse_fn";
-    next_token pars;
-    let arg = expect_id pars in
-    expect pars ARROW;
-    let e = Fn (arg, parse_expr pars) in
     debug_parse_out "parse_fn";
     e
 
@@ -322,9 +326,19 @@ and parse_let pars =
     let id = expect_id pars in
     expect pars EQ;
     let e = parse_expr pars in
-    expect pars IN;
-    let body = parse_expr pars in
-    let res = if is_rec then Letrec (id, e, body) else Let (id, e, body)
+    let res =
+        if peek_token_type pars = IN then begin
+            next_token pars;
+            let body = parse_expr pars in
+            if is_rec then
+                LetrecIn (id, e, body)
+            else
+                LetIn (id, e, body)
+        end else
+            if is_rec then
+                Letrec (id, e)
+            else
+                Let (id, e)
     in
     debug_parse_out "parse_let";
     res
