@@ -15,7 +15,22 @@ let rec top_level () =
         | Sys_error s -> print_endline s
         | End_of_file -> ()
 
-let () =
-    Test.test();
-    top_level()
+let load_source name =
+    (*TODO*)
+    ()
+
+let main () =
+    let filenames = ref [] in
+    let do_test = ref false in
+    Arg.parse [("-t", Arg.Unit (fun () -> do_test := true), "  test mode");]
+        (fun name -> filenames := name::!filenames)
+        "usage: tml [-t] filename...";
+    List.iter load_source (List.rev !filenames);
+    if !do_test then
+        Test.test()
+    else if List.length !filenames = 0 then
+        top_level()
+    else ()
+
+let () = main ()
 
