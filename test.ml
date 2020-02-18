@@ -143,8 +143,8 @@ let parse_test_exprs = [
         Apply (Fn (Ident "x", Binary (BinAdd, Ident "x", EInt 1)), 
             Binary (BinMul, EInt 300,
                 Binary (BinAdd, EInt 12, EInt 3))));
-    ("let fact = fn n -> if n < 1 then 1 else n * fact (n - 1) in fact 5",
-            Let ("fact",
+    ("let rec fact = fn n -> if n < 1 then 1 else n * fact (n - 1) in fact 5",
+            LetrecIn ("fact",
                 Fn (Ident "n",
                     (If (Binary (BinLT, Ident "n", EInt 1),
                           EInt 1,
@@ -244,7 +244,7 @@ let eval_test verbose =
             if verbose then
                 print_endline ("text> " ^ text)
             else ();
-            let v = Eval.eval [] @@ Parser.parse_one @@ Scanner.from_string text in
+            let v = Eval.eval_line text in
             if verbose then begin
                 print_endline ("evaluated> " ^ value_to_str v);
                 print_endline ("expected > " ^ value_to_str expected)
@@ -262,6 +262,6 @@ let test () =
 *)
     scanner_test false;
     parser_test false;
-    eval_test false;
+    eval_test true;
     report ()
 

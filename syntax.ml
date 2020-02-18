@@ -25,7 +25,10 @@ type exp = Eof | Unit | EInt of int | EBool of bool | Ident of id
     | EChar of char | EString of string
     | Binary of binop * exp * exp | Unary of unop * exp
     | If of exp * exp * exp
-    | Let of id * exp * exp | Letrec of id * exp * exp
+    | Let of id * exp
+    | Letrec of id * exp
+    | LetIn of id * exp * exp
+    | LetrecIn of id * exp * exp
     | Fn of exp * exp | Apply of exp * exp
 
 type value = VUnit | VInt of int | VBool of bool | VChar of char | VString of string
@@ -69,8 +72,10 @@ let rec exp_to_str = function
     | Binary (op, x, y) -> "(" ^ exp_to_str x ^ " " ^ str_of_binop op ^ " " ^ exp_to_str y ^ ")"
     | Unary (op, e) -> "(" ^ str_of_unop op ^ exp_to_str e ^ ")"
     | If (c, t, e) -> "(if " ^ exp_to_str c ^ " then " ^ exp_to_str t ^ " else " ^ exp_to_str e ^ ")"
-    | Let (id, e, b) -> "(let " ^ id ^ " = " ^ exp_to_str e ^ " in " ^ exp_to_str b ^ ")"
-    | Letrec (id, e, b) -> "(let rec " ^ id ^ " = " ^ exp_to_str e ^ " in " ^ exp_to_str b ^ ")"
+    | Let (id, e) -> "(let " ^ id ^ " = " ^ exp_to_str e ^ ")"
+    | Letrec (id, e) -> "(let rec " ^ id ^ " = " ^ exp_to_str e ^ ")"
+    | LetIn (id, e, b) -> "(let " ^ id ^ " = " ^ exp_to_str e ^ " in " ^ exp_to_str b ^ ")"
+    | LetrecIn (id, e, b) -> "(let rec " ^ id ^ " = " ^ exp_to_str e ^ " in " ^ exp_to_str b ^ ")"
     | Fn (a, b) -> "(fn " ^ exp_to_str a ^ " -> " ^ exp_to_str b ^ ")"
     | Apply (f, a) -> "(" ^ exp_to_str f ^ " " ^ exp_to_str a ^ ")"
 
@@ -80,5 +85,5 @@ let value_to_str = function
     | VBool b -> string_of_bool b
     | VChar c -> String.make 1 c
     | VString s -> s
-    | Closure (arg, body, _) -> "<fn " ^ exp_to_str arg ^ " -> " ^ exp_to_str body ^ ">" 
+    | Closure _ -> "<closure>"
 

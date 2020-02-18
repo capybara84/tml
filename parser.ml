@@ -326,9 +326,19 @@ and parse_let pars =
     let id = expect_id pars in
     expect pars EQ;
     let e = parse_expr pars in
-    expect pars IN;
-    let body = parse_expr pars in
-    let res = if is_rec then Letrec (id, e, body) else Let (id, e, body)
+    let res =
+        if peek_token_type pars = IN then begin
+            next_token pars;
+            let body = parse_expr pars in
+            if is_rec then
+                LetrecIn (id, e, body)
+            else
+                LetIn (id, e, body)
+        end else
+            if is_rec then
+                Letrec (id, e)
+            else
+                Let (id, e)
     in
     debug_parse_out "parse_let";
     res

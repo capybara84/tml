@@ -1,7 +1,15 @@
 open Syntax
 
-let error msg =
-    raise (Error ("Runtime Error: " ^ msg))
+let error msg = raise (Error ("Runtime Error: " ^ msg))
+
+let g_env = ref []
+
+let load_file filename =
+    let ic = open_in filename in
+    let n = in_channel_length ic in
+    let text = really_input_string ic n in
+    close_in ic;
+    text
 
 let eval_unary = function
     | (UMinus, VInt n) -> VInt (-n)
@@ -37,61 +45,92 @@ let eval_binary = function
     | _ -> error "type error (binary expression)"
 
 
-let rec eval env e =
+let rec eval env = function
+    | Eof -> VUnit
+    | Unit -> VUnit
+    | EInt n -> VInt n
+    | EBool b -> VBool b
+    | Ident x ->
+        (try !(env_lookup env x) with Not_found -> error ("'" ^ x ^ "' not found"))
+    | EChar c -> VChar c
+    | EString s -> VString s
+    | Binary (BinLand, x, y) ->
+        if eval env x = VBool false then
+            VBool false
+        else
+            eval env y
+    | Binary (BinLor, x, y) ->
+        if eval env x = VBool true then
+            VBool true
+        else
+            eval env y
+    | Binary (op, x, y) -> eval_binary (op, eval env x, eval env y)
+    | Unary (op, e) -> eval_unary (op, eval env e)
+    | If (c, t, e) ->
+        begin match eval env c with
+            | VBool true -> eval env t
+            | VBool false -> eval env e
+            | _ -> error "non-boolean"
+        end
+    | Fn (arg, body) ->
+        Closure (arg, body, env)
+    | Apply (fn, arg) ->
+        let closure = eval env fn in
+        let arg_value = eval env arg in
+        begin match closure with
+            | Closure (Ident carg, body, closure_env) ->
+                let app_env = env_extend closure_env carg (ref arg_value) in
+                eval app_env body
+            | Closure (Unit, body, closure_env) ->
+                eval closure_env body
+            | v -> error ("application of non-function: " ^ value_to_str v)
+        end
+    | Let (id, e) ->
+        let v = eval env e in
+        g_env := env_extend !g_env id (ref v);
+        VUnit
+    | Letrec (id, fn) ->
+        let r = ref VUnit in
+        g_env := env_extend !g_env id r;
+        r := eval !g_env fn;
+        VUnit
+    | LetIn (id, e, body) ->
+        let v = eval env e in
+        let env = env_extend env id (ref v) in
+        eval env body
+    | LetrecIn (id, fn, body) ->
+        let r = ref VUnit in
+        let renv = env_extend env id r in
+        r := eval renv fn;
+        eval renv body
+
 (*
-    print_endline ("eval " ^ exp_to_str e);
+let rec print_env = function
+    | [] -> ()
+    | (id, v)::xs ->
+        print_endline @@ " " ^ id ^ " = " ^ value_to_str !v;
+        print_env xs
 *)
-    let r =
-        match e with
-        | Eof -> VUnit
-        | Unit -> VUnit
-        | EInt n -> VInt n
-        | EBool b -> VBool b
-        | Ident x -> !(env_lookup env x)
-        | EChar c -> VChar c
-        | EString s -> VString s
-        | Binary (BinLand, x, y) ->
-            if eval env x = VBool false then
-                VBool false
-            else
-                eval env y
-        | Binary (BinLor, x, y) ->
-            if eval env x = VBool true then
-                VBool true
-            else
-                eval env y
-        | Binary (op, x, y) -> eval_binary (op, eval env x, eval env y)
-        | Unary (op, e) -> eval_unary (op, eval env e)
-        | If (c, t, e) ->
-            begin match eval env c with
-                | VBool true -> eval env t
-                | VBool false -> eval env e
-                | _ -> error "non-boolean"
-            end
-        | Let (id, e, body) ->
-            let v = eval env e in
-            let env = env_extend env id (ref v) in
-            eval env body
-        | Letrec (id, fn, body) ->
-            let r = ref VUnit in
-            let renv = env_extend env id r in
-            r := eval renv fn;
-            eval renv body
-        | Fn (arg, body) ->
-            Closure (arg, body, env)
-        | Apply (fn, arg) ->
-            let closure = eval env fn in
-            let arg_value = eval env arg in
-            begin match closure with
-                | Closure (Ident carg, body, closure_env) ->
-                    let app_env = env_extend closure_env carg (ref arg_value) in
-                    eval app_env body
-                | Closure (Unit, body, closure_env) ->
-                    eval closure_env body
-                | v -> error ("application of non-function: " ^ value_to_str v)
-            end
-    in
-(*
-    print_endline ("result = " ^ value_to_str r);
-*)
-    r
+
+let eval_line text =
+    eval !g_env @@ Parser.parse_one @@ Scanner.from_string text
+
+let eval_all el =
+    let rec loop = function
+        | [] -> ()
+        | x::xs ->
+            let v = eval !g_env x in
+            if v <> VUnit then
+                print_endline "Warning: The expression should have type unit"
+            else ();
+            loop xs
+    in loop el
+
+let load_source filename =
+    try
+        let text = load_file filename in
+        eval_all @@ Parser.parse @@ Scanner.from_string text
+    with
+        | Error s | Sys_error s -> print_endline s
+        | End_of_file -> ()
+
