@@ -33,7 +33,7 @@ type exp = Eof | Unit | EInt of int | EBool of bool | Ident of id
     | Comp of exp * exp
 
 type value = VUnit | VInt of int | VBool of bool | VChar of char | VString of string
-    | Closure of exp * exp * env_t
+    | VClosure of exp * exp * env_t | VBuiltin of (value -> value)
 and env_t = (id * value ref) list
 
 let env_extend env id value = (id, value) :: env
@@ -88,5 +88,6 @@ let value_to_str = function
     | VBool b -> string_of_bool b
     | VChar c -> String.make 1 c
     | VString s -> s
-    | Closure _ -> "<closure>"
+    | VClosure _ -> "<closure>"
+    | VBuiltin _ -> "<builtin>"
 

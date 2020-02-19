@@ -73,16 +73,18 @@ let rec eval env = function
             | _ -> error "non-boolean"
         end
     | Fn (arg, body) ->
-        Closure (arg, body, env)
+        VClosure (arg, body, env)
     | Apply (fn, arg) ->
         let closure = eval env fn in
         let arg_value = eval env arg in
         begin match closure with
-            | Closure (Ident carg, body, closure_env) ->
+            | VClosure (Ident carg, body, closure_env) ->
                 let app_env = env_extend closure_env carg (ref arg_value) in
                 eval app_env body
-            | Closure (Unit, body, closure_env) ->
+            | VClosure (Unit, body, closure_env) ->
                 eval closure_env body
+            | VBuiltin builtin ->
+                builtin arg_value
             | v -> error ("application of non-function: " ^ value_to_str v)
         end
     | Let (id, e) ->
@@ -103,6 +105,9 @@ let rec eval env = function
         let renv = env_extend env id r in
         r := eval renv fn;
         eval renv body
+    | Comp (e1, e2) ->
+        ignore @@ eval env e1;
+        eval env e2
 
 (*
 let rec print_env = function
