@@ -127,6 +127,8 @@ let eval_all el =
     let rec loop = function
         | [] -> ()
         | x::xs ->
+            if !g_verbose then print_endline @@ exp_to_str x
+            else ();
             let v = eval !g_env x in
             if v <> VUnit then
                 print_endline "Warning: The expression should have type unit"

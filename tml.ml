@@ -16,15 +16,18 @@ let rec top_level () =
 let main () =
     let filenames = ref [] in
     let do_test = ref false in
-    Arg.parse [("-t", Arg.Unit (fun () -> do_test := true), "    test mode");
-               ("-d", Arg.Int (fun x -> Parser.debug := x), "N   parser debug level N");]
+    Arg.parse [ ("-d", Arg.Int (fun x -> Parser.debug := x),   "N   parser debug level N");
+                ("-t", Arg.Unit (fun () -> do_test := true),   "    test mode");
+                ("-v", Arg.Unit (fun () -> g_verbose := true), "    verbose mode");
+              ]
         (fun name -> filenames := name::!filenames)
         "usage: tml [-t] filename...";
+    Builtins.init ();
     List.iter Eval.load_source (List.rev !filenames);
     if !do_test then
-        Test.test()
+        Test.test ()
     else if List.length !filenames = 0 then
-        top_level()
+        top_level ()
     else ()
 
 let () = main ()

@@ -2,6 +2,8 @@
 
 exception Error of string
 
+let g_verbose = ref false
+
 type token_type
     = EOF | ID of string | BOOL_LIT of bool | INT_LIT of int
     | CHAR_LIT of char | STRING_LIT of string
@@ -80,6 +82,7 @@ let rec exp_to_str = function
     | LetrecIn (id, e, b) -> "(let rec " ^ id ^ " = " ^ exp_to_str e ^ " in " ^ exp_to_str b ^ ")"
     | Fn (a, b) -> "(fn " ^ exp_to_str a ^ " -> " ^ exp_to_str b ^ ")"
     | Apply (f, a) -> "(" ^ exp_to_str f ^ " " ^ exp_to_str a ^ ")"
+    | Comp (a, Unit) -> "(comp " ^ exp_to_str a ^ ")"
     | Comp (a, b) -> "(comp " ^ exp_to_str a ^ ", " ^ exp_to_str b ^ ")"
 
 let value_to_str = function
