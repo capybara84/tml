@@ -105,8 +105,11 @@ let rec eval env = function
         let renv = env_extend env id r in
         r := eval renv fn;
         eval renv body
+    | Comp (e1, Unit) ->
+        eval env e1
     | Comp (e1, e2) ->
-        ignore @@ eval env e1;
+        let v = eval env e1 in
+        if v <> VUnit then error ("unit required") else ();
         eval env e2
 
 (*

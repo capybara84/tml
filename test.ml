@@ -238,6 +238,9 @@ let eval_test_exprs = [
     ("let add = fn x y -> x + y", VUnit);
     ("let inc = add 1", VUnit);
     ("inc 3", VInt 4);
+    ("let x = 1 in { let foo = fn x -> x + 1 in foo x }", VInt 2);
+    ("let ignore = fn _ -> ()", VUnit);
+    ("let x = 1 in { ignore (x + 2); x + 3 }", VInt 4);
 ]
 
 let eval_test verbose =
