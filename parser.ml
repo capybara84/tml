@@ -273,17 +273,17 @@ and parse_logical pars =
 and parse_comp pars =
     debug_parse_in "parse_comp";
     next_token pars;
-    let rec parse_rhs lhs =
+    let rec parse_rest pars =
         if peek_token_type pars <> SEMI then
-            lhs
+            Unit
         else begin
             next_token pars;
-            let rhs = parse_expr pars in
-            parse_rhs (Comp (lhs, rhs))
+            let e = parse_expr pars in
+            Comp (e, parse_rest pars)
         end
     in
-    let e = parse_expr pars in
-    let e = parse_rhs e in
+    let e1 = parse_expr pars in
+    let e = Comp (e1, parse_rest pars) in
     expect pars END;
     debug_parse_out "parse_comp";
     e

@@ -164,7 +164,7 @@ let parse_test_exprs = [
     ("true", EBool true);
     ("false", EBool false);
     ("(1)", EInt 1);
-    ("{1;2;3;}", Comp (EInt 1, Comp (EInt 2, Comp (EInt 3, Unit))));
+    ("{1;2;3}", Comp (EInt 1, Comp (EInt 2, Comp (EInt 3, Unit))));
 ]
 
 let parser_test verbose =
