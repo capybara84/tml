@@ -270,6 +270,24 @@ and parse_logical pars =
     debug_parse_out "parse_logical";
     e
 
+and parse_comp pars =
+    debug_parse_in "parse_comp";
+    next_token pars;
+    let rec parse_rhs lhs =
+        if peek_token_type pars <> SEMI then
+            lhs
+        else begin
+            next_token pars;
+            let rhs = parse_expr pars in
+            parse_rhs (Comp (lhs, rhs))
+        end
+    in
+    let e = parse_expr pars in
+    let e = parse_rhs e in
+    expect pars END;
+    debug_parse_out "parse_comp";
+    e
+
 and parse_if pars =
     debug_parse_in "parse_if";
     next_token pars;
@@ -350,12 +368,9 @@ and parse_expr pars =
         | LET -> parse_let pars
         | FN -> parse_fn pars
         | IF -> parse_if pars
+        | BEGIN -> parse_comp pars
         | _ -> parse_logical pars
     in
-    if peek_token_type pars = SEMI then
-        next_token pars
-    else
-        ();
     debug_parse_out "parse_expr";
     e
 

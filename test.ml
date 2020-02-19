@@ -61,18 +61,17 @@ identifier Ident 12345
 'a' '\\t' \"abc\\n\"
 let rec in fn if then else
 = == != < <= > >=
-- + / *
-! | || &&
--> ( ) , ;
+- + / * ! | || &&
+-> ( ) () , ; { } 
 "
 let test_tokens = [
     ID "identifier"; ID "Ident"; INT_LIT 12345;
     CHAR_LIT 'a'; CHAR_LIT '\t'; STRING_LIT "abc\n";
     LET; REC; IN; FN; IF; THEN; ELSE;
     EQ; EQL; NEQ; LT; LE; GT; GE;
-    MINUS; PLUS; SLASH; STAR;
-    NOT; OR; LOR; LAND;
-    ARROW; LPAR; RPAR; COMMA; SEMI;
+    MINUS; PLUS; SLASH; STAR; NOT; OR; LOR; LAND;
+    ARROW; LPAR; RPAR; EMPTY; COMMA; SEMI;
+    BEGIN; END;
     EOF
 ]
 
@@ -165,6 +164,7 @@ let parse_test_exprs = [
     ("true", EBool true);
     ("false", EBool false);
     ("(1)", EInt 1);
+    ("{1;2;3;}", Comp (EInt 1, Comp (EInt 2, Comp (EInt 3, Unit))));
 ]
 
 let parser_test verbose =
@@ -181,7 +181,7 @@ let parser_test verbose =
                 print_endline ("parsed  > " ^ parsed);
                 print_endline ("expected> " ^ expected)
             end else ();
-            equal parsed expected ("text:" ^ text ^ "\nresult:" ^ parsed ^ " != " ^ expected ^ "\n")
+            equal parsed expected ("text:" ^ text ^ "\nresult:" ^ parsed ^ " != " ^ expected)
         with Error s -> fail s
     in
     List.iter do_parse parse_test_exprs;
@@ -235,6 +235,9 @@ let eval_test_exprs = [
     ("let add = fn x y -> x + y in add 2 3", VInt 5);
     ("let add = fn x y -> x + y in let add5 = add 5 in add5 3", VInt 8);
     ("let rec fact = fn n -> if n < 1 then 1 else n * fact (n-1) in fact 5", VInt 120);
+    ("let add = fn x y -> x + y", VUnit);
+    ("let inc = add 1", VUnit);
+    ("inc 3", VInt 4);
 ]
 
 let eval_test verbose =
@@ -262,6 +265,6 @@ let test () =
 *)
     scanner_test false;
     parser_test false;
-    eval_test true;
+    eval_test false;
     report ()
 

@@ -2,6 +2,7 @@
 expr = LET [REC] ID '=' expr [IN expr]
     | FN params '->' expr
     | IF expr THEN expr ELSE expr
+    | '{' expr {';' expr} '}'
     | logical_expr
 params = '()' | ID {ID}
 logical_expr = equal_expr {logical_op equal_expr}

@@ -16,7 +16,8 @@ let rec top_level () =
 let main () =
     let filenames = ref [] in
     let do_test = ref false in
-    Arg.parse [("-t", Arg.Unit (fun () -> do_test := true), "  test mode");]
+    Arg.parse [("-t", Arg.Unit (fun () -> do_test := true), "    test mode");
+               ("-d", Arg.Int (fun x -> Parser.debug := x), "N   parser debug level N");]
         (fun name -> filenames := name::!filenames)
         "usage: tml [-t] filename...";
     List.iter Eval.load_source (List.rev !filenames);

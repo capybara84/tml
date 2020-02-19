@@ -8,7 +8,7 @@ type token_type
     | LET | REC | IN | FN | IF | THEN | ELSE
     | EQ | EQL | NEQ | LT | LE | GT | GE | MINUS | PLUS | SLASH | STAR
     | NOT | OR | LOR | LAND | ARROW | LPAR | RPAR | EMPTY
-    | COMMA | SEMI
+    | COMMA | SEMI | BEGIN | END
 
 type token = {
     token_type : token_type;
@@ -30,6 +30,7 @@ type exp = Eof | Unit | EInt of int | EBool of bool | Ident of id
     | LetIn of id * exp * exp
     | LetrecIn of id * exp * exp
     | Fn of exp * exp | Apply of exp * exp
+    | Comp of exp * exp
 
 type value = VUnit | VInt of int | VBool of bool | VChar of char | VString of string
     | Closure of exp * exp * env_t
@@ -49,6 +50,7 @@ let token_type_to_string = function
     | SLASH -> "/" | STAR -> "*" | NOT -> "!" | OR -> "|"
     | LOR -> "||" | LAND -> "&&" | ARROW -> "->" | LPAR -> "(" | RPAR -> ")"
     | EMPTY -> "()" | COMMA -> "," | SEMI -> ";"
+    | BEGIN -> "{" | END -> "}"
 
 let token_to_string t = token_type_to_string t.token_type
 
@@ -78,6 +80,7 @@ let rec exp_to_str = function
     | LetrecIn (id, e, b) -> "(let rec " ^ id ^ " = " ^ exp_to_str e ^ " in " ^ exp_to_str b ^ ")"
     | Fn (a, b) -> "(fn " ^ exp_to_str a ^ " -> " ^ exp_to_str b ^ ")"
     | Apply (f, a) -> "(" ^ exp_to_str f ^ " " ^ exp_to_str a ^ ")"
+    | Comp (a, b) -> "(comp " ^ exp_to_str a ^ ", " ^ exp_to_str b ^ ")"
 
 let value_to_str = function
     | VUnit -> "()"
